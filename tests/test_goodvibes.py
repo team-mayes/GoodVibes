@@ -4,7 +4,7 @@
 import os
 import pytest
 import math
-from goodvibes import GoodVibes as GV
+from goodvibes import goodvibes_hmayes as GV
 from conftest import datapath
 from goodvibes.media import solvents
 

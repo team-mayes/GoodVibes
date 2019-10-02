@@ -12,7 +12,7 @@ if __package__ == '':
     path = os.path.dirname(os.path.dirname(__file__))
     sys.path.insert(0, path)
 
-from goodvibes import GoodVibes  # noqa
+from goodvibes import goodvibes_hmayes  # noqa
 
 if __name__ == '__main__':
-    sys.exit(GoodVibes.main())
+    sys.exit(goodvibes_hmayes.main())
