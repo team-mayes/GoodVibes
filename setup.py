@@ -8,7 +8,7 @@ with io.open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-  name='goodvibes',
+  name='goodvibes_hmayes',
   packages=['goodvibes'],
   version='3.0.1.hmayes',
   description='A python program to compute corrections to thermochemical data from frequency calculations',
@@ -23,4 +23,5 @@ setup(
   install_requires=["numpy", ],
   python_requires='>=2.6',
   include_package_data=True,
+  tests_require=['pytest']
 )
