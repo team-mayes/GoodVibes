@@ -118,7 +118,7 @@ class TestGoodVibesHM(unittest.TestCase):
                 self.assertTrue("688.0              -230.149811   -230.150105   0.102064   0.101784   -230.251875   "
                                 "-230.251889" in output)
                 self.assertTrue("788.0              -230.144259   -230.144593   0.122832   0.122467   -230.267091   "
-                                "-230.267060" in output)
+                                "-230.267061" in output)
                 self.assertTrue("888.0              -230.138341   -230.138717   0.144694   0.144240   -230.283035   "
                                 "-230.282956" in output)
         finally:
@@ -153,4 +153,19 @@ class TestGoodVibesHM(unittest.TestCase):
                                 "-840.003430" in output)
         finally:
             silent_remove(GOODVIBES_DAT, disable=DISABLE_REMOVE)
+            pass
+
+    def testAltTempRangeVibConc(self):
+        test_input = [TEST_LOG2, "-t", "788.15", "-v", "0.984", "-c", "1", "--ti", "300,600,30"]
+        try:
+            main(test_input)
+            # with capture_stdout(main, test_input) as output:
+            #     self.assertTrue("688.0              -839.735142   -839.741153   0.211931   0.200195   -839.947074   "
+            #                     "-839.941348" in output)
+            #     self.assertTrue("788.0              -839.717116   -839.723992   0.261659   0.247292   -839.978776   "
+            #                     "-839.971284" in output)
+            #     self.assertTrue("888.0              -839.698030   -839.705771   0.314768   0.297659   -840.012798   "
+            #                     "-840.003430" in output)
+        finally:
+            # silent_remove(GOODVIBES_DAT, disable=DISABLE_REMOVE)
             pass

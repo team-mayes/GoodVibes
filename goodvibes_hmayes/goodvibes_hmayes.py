@@ -57,6 +57,8 @@ from datetime import datetime, timedelta
 from glob import glob
 from argparse import ArgumentParser
 import numpy as np
+from common_wrangler.common import (GAS_CONSTANT, ATM_TO_KPA, AU_TO_J, EHPART_TO_KCAL_MOL, H, KB, SPEED_OF_LIGHT,
+                                    AMU_TO_KG, AVOGADRO_CONST)
 
 # Importing regardless of relative import
 try:
@@ -78,15 +80,16 @@ __version__ = "3.0.1.hmayes"
 SUPPORTED_EXTENSIONS = set(('.out', '.log'))
 
 # PHYSICAL CONSTANTS                                      UNITS
-GAS_CONSTANT = 8.3144621  # J / K / mol
-PLANCK_CONSTANT = 6.62606957e-34  # J * s
-BOLTZMANN_CONSTANT = 1.3806488e-23  # J / K
-SPEED_OF_LIGHT = 2.99792458e10  # cm / s
-AVOGADRO_CONSTANT = 6.0221415e23  # 1 / mol
-AMU_to_KG = 1.66053886E-27  # UNIT CONVERSION
-ATMOS = 101.325  # UNIT CONVERSION
-J_TO_AU = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
-KCAL_TO_AU = 627.509541  # UNIT CONVERSION
+# GAS_CONSTANT = 8.3144621  # J / K / mol
+# H = 6.62606957e-34  # J * s, PLANCK_CONSTANT
+# KB = 1.3806488e-23  # J / K, BOLTZMANN_CONSTANT
+# SPEED_OF_LIGHT = 2.99792458e10  # cm / s
+# AVOGADRO_CONST = 6.0221415e23  # 1 / mol, AVOGADRO_CONSTANT
+# AMU_TO_KG = 1.66053886E-27  # UNIT CONVERSION
+# ATM_TO_KPA = 101.325  # UNIT CONVERSION
+# AU_TO_J = 4.184 * 627.509541 * 1000.0  # UNIT CONVERSION
+# EHPART_TO_KCAL_MOL = 627.509541  # UNIT CONVERSION
+
 
 # Some literature references
 grimme_ref = "Grimme, S. Chem. Eur. J. 2012, 18, 9955-9964"
@@ -424,10 +427,10 @@ class calc_bbe:
 
             # Add terms (converted to au) to get Free energy - perform separately
             # for harmonic and quasi-harmonic values out of interest
-            self.enthalpy = self.scf_energy + (u_trans + u_rot + u_vib + GAS_CONSTANT * temperature) / J_TO_AU
+            self.enthalpy = self.scf_energy + (u_trans + u_rot + u_vib + GAS_CONSTANT * temperature) / AU_TO_J
             self.qh_enthalpy = 0.0
             if QH:
-                self.qh_enthalpy = self.scf_energy + (u_trans + u_rot + qh_u_vib + GAS_CONSTANT * temperature) / J_TO_AU
+                self.qh_enthalpy = self.scf_energy + (u_trans + u_rot + qh_u_vib + GAS_CONSTANT * temperature) / AU_TO_J
             # Single point correction replaces energy from optimization with single point value
             if spc is not False:
                 try:
@@ -440,9 +443,9 @@ class calc_bbe:
                     except TypeError:
                         pass
 
-            self.zpe = zpe / J_TO_AU
-            self.entropy = (s_trans + s_rot + h_s_vib + s_elec) / J_TO_AU
-            self.qh_entropy = (s_trans + s_rot + qh_s_vib + s_elec) / J_TO_AU
+            self.zpe = zpe / AU_TO_J
+            self.entropy = (s_trans + s_rot + h_s_vib + s_elec) / AU_TO_J
+            self.qh_entropy = (s_trans + s_rot + qh_s_vib + s_elec) / AU_TO_J
 
             # Symmetry - entropy correction for molecular symmetry
             if ssymm:
@@ -539,7 +542,7 @@ class calc_bbe:
         ex_sym, pgroup = self.ex_sym(file)
         int_sym = self.int_sym()
         sym_num = ex_sym * int_sym
-        sym_correction = (-GAS_CONSTANT * math.log(sym_num)) / J_TO_AU
+        sym_correction = (-GAS_CONSTANT * math.log(sym_num)) / AU_TO_J
         return sym_correction, pgroup
 
 
@@ -705,7 +708,7 @@ class get_pes:
                                                 g_rel = thermo_data[conformer].cosmo_qhg - g_min
                                             else:
                                                 g_rel = thermo_data[conformer].qh_gibbs_free_energy - g_min
-                                            boltz_fac = math.exp(-g_rel * J_TO_AU / GAS_CONSTANT / temperature)
+                                            boltz_fac = math.exp(-g_rel * AU_TO_J / GAS_CONSTANT / temperature)
                                             boltz_sum += boltz_fac
                                         for conformer in species[
                                             structure]:  # Calculate relative data based on Gmin and the Boltzmann sum
@@ -713,7 +716,7 @@ class get_pes:
                                                 g_rel = thermo_data[conformer].cosmo_qhg - g_min
                                             else:
                                                 g_rel = thermo_data[conformer].qh_gibbs_free_energy - g_min
-                                            boltz_fac = math.exp(-g_rel * J_TO_AU / GAS_CONSTANT / temperature)
+                                            boltz_fac = math.exp(-g_rel * AU_TO_J / GAS_CONSTANT / temperature)
                                             boltz_prob = boltz_fac / boltz_sum
                                             if hasattr(thermo_data[conformer], "sp_energy") and thermo_data[
                                                 conformer].sp_energy is not '!':
@@ -727,11 +730,11 @@ class get_pes:
                                             if gconf:  # Default calculate gconf correction for conformers
                                                 h_conf += thermo_data[conformer].enthalpy * boltz_prob
                                                 s_conf += thermo_data[conformer].entropy * boltz_prob
-                                                s_conf += -GAS_CONSTANT / J_TO_AU * boltz_prob * math.log(boltz_prob)
+                                                s_conf += -GAS_CONSTANT / AU_TO_J * boltz_prob * math.log(boltz_prob)
 
                                                 qh_conf += thermo_data[conformer].qh_enthalpy * boltz_prob
                                                 qs_conf += thermo_data[conformer].qh_entropy * boltz_prob
-                                                qs_conf += -GAS_CONSTANT / J_TO_AU * boltz_prob * math.log(boltz_prob)
+                                                qs_conf += -GAS_CONSTANT / AU_TO_J * boltz_prob * math.log(boltz_prob)
                                             else:
                                                 h_zero += thermo_data[conformer].enthalpy * boltz_prob
                                                 s_zero += thermo_data[conformer].entropy * boltz_prob
@@ -877,7 +880,7 @@ class get_pes:
                                                         g_rel = thermo_data[conformer].cosmo_qhg - g_min
                                                     else:
                                                         g_rel = thermo_data[conformer].qh_gibbs_free_energy - g_min
-                                                    boltz_fac = math.exp(-g_rel * J_TO_AU / GAS_CONSTANT / temperature)
+                                                    boltz_fac = math.exp(-g_rel * AU_TO_J / GAS_CONSTANT / temperature)
                                                     boltz_sum += boltz_fac
                                                 # Calculate relative data based on Gmin and the Boltzmann sum
                                                 for conformer in species[structure]:
@@ -885,7 +888,7 @@ class get_pes:
                                                         g_rel = thermo_data[conformer].cosmo_qhg - g_min
                                                     else:
                                                         g_rel = thermo_data[conformer].qh_gibbs_free_energy - g_min
-                                                    boltz_fac = math.exp(-g_rel * J_TO_AU / GAS_CONSTANT / temperature)
+                                                    boltz_fac = math.exp(-g_rel * AU_TO_J / GAS_CONSTANT / temperature)
                                                     boltz_prob = boltz_fac / boltz_sum
                                                     if hasattr(thermo_data[conformer], "sp_energy") and thermo_data[
                                                         conformer].sp_energy is not '!':
@@ -905,11 +908,11 @@ class get_pes:
                                                     if gconf:  # Default calculate gconf correction for conformers
                                                         h_conf += thermo_data[conformer].enthalpy * boltz_prob
                                                         s_conf += thermo_data[conformer].entropy * boltz_prob
-                                                        s_conf += -GAS_CONSTANT / J_TO_AU * boltz_prob * math.log(boltz_prob)
+                                                        s_conf += -GAS_CONSTANT / AU_TO_J * boltz_prob * math.log(boltz_prob)
 
                                                         qh_conf += thermo_data[conformer].qh_enthalpy * boltz_prob
                                                         qs_conf += thermo_data[conformer].qh_entropy * boltz_prob
-                                                        qs_conf += -GAS_CONSTANT / J_TO_AU * boltz_prob * math.log(boltz_prob)
+                                                        qs_conf += -GAS_CONSTANT / AU_TO_J * boltz_prob * math.log(boltz_prob)
                                                     else:
                                                         h_abs += thermo_data[conformer].enthalpy * boltz_prob
                                                         s_abs += thermo_data[conformer].entropy * boltz_prob
@@ -1130,9 +1133,9 @@ def graph_reaction_profile(graph_data, log, options, plt):
             species = graph_data.qhg_abs[i][j]
             relative = species - zero_val
             if graph_data.units == 'kJ/mol':
-                formatted_g = J_TO_AU / 1000.0 * relative
+                formatted_g = AU_TO_J / 1000.0 * relative
             else:
-                formatted_g = KCAL_TO_AU * relative  # Defaults to kcal/mol
+                formatted_g = EHPART_TO_KCAL_MOL * relative  # Defaults to kcal/mol
             g_data.append(formatted_g)
         data[path] = g_data
 
@@ -1252,13 +1255,13 @@ def graph_reaction_profile(graph_data, log, options, plt):
                     zero_val = graph_data.g_species_qhgzero[i][j][k]
                     points = graph_data.g_qhgvals[i][j][k]
                     points[:] = [((x - zero_val) + (graph_data.qhg_abs[i][j] - graph_data.qhg_zero[i][0]) + (
-                            graph_data.g_rel_val[i][j] - graph_data.qhg_abs[i][j])) * KCAL_TO_AU for x in points]
+                            graph_data.g_rel_val[i][j] - graph_data.qhg_abs[i][j])) * EHPART_TO_KCAL_MOL for x in points]
                     if len(colors) > 1:
                         jitter(points, colors[i], ax, j, markers[k])
                     else:
                         jitter(points, color, ax, j, markers[k])
                     if show_gconf:
-                        plt.hlines((graph_data.g_rel_val[i][j] - graph_data.qhg_zero[i][0]) * KCAL_TO_AU, j - 0.15,
+                        plt.hlines((graph_data.g_rel_val[i][j] - graph_data.qhg_zero[i][0]) * EHPART_TO_KCAL_MOL, j - 0.15,
                                    j + 0.15, linestyles='dashed')
 
     # Annotate points with energy level
@@ -1358,7 +1361,7 @@ def cosmo_rs_out(datfile, names, interval=False):
                         if float(temp) not in t_interval:
                             t_interval.append(float(temp))
                         if data[i + 10].find('Gibbs') > -1:
-                            gsolv = float(data[i + 10].split()[6].strip()) / KCAL_TO_AU
+                            gsolv = float(data[i + 10].split()[6].strip()) / EHPART_TO_KCAL_MOL
                             gsolv_temp[name] = gsolv
 
                             found = True
@@ -1379,7 +1382,7 @@ def cosmo_rs_out(datfile, names, interval=False):
             for name in names:
                 if line.find('(' + name.split('.')[0] + ')') > -1 and line.find('Compound') > -1:
                     if data[i + 11].find('Gibbs') > -1:
-                        gsolv = float(data[i + 11].split()[6].strip()) / KCAL_TO_AU
+                        gsolv = float(data[i + 11].split()[6].strip()) / EHPART_TO_KCAL_MOL
                         gsolv[name] = gsolv
 
     if interval:
@@ -1885,10 +1888,10 @@ def calc_vibrational_energy(frequency_wn, temperature, freq_scale_factor, fract_
     if fract_modelsys is not False:
         freq_scale_factor = [freq_scale_factor[0] * fract_modelsys[i] + freq_scale_factor[1] * (1.0 - fract_modelsys[i])
                              for i in range(len(fract_modelsys))]
-        factor = [(PLANCK_CONSTANT * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) / (BOLTZMANN_CONSTANT * temperature)
+        factor = [(H * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) / (KB * temperature)
                   for i in range(len(frequency_wn))]
     else:
-        factor = [(PLANCK_CONSTANT * freq * SPEED_OF_LIGHT * freq_scale_factor) / (BOLTZMANN_CONSTANT * temperature) for freq in frequency_wn]
+        factor = [(H * freq * SPEED_OF_LIGHT * freq_scale_factor) / (KB * temperature) for freq in frequency_wn]
     # Error occurs if T is too low when performing math.exp
     for entry in factor:
         if entry > math.log(sys.float_info.max):
@@ -1910,10 +1913,10 @@ def calc_zeropoint_energy(frequency_wn, freq_scale_factor, fract_modelsys):
     if fract_modelsys is not False:
         freq_scale_factor = [freq_scale_factor[0] * fract_modelsys[i] + freq_scale_factor[1] * (1.0 - fract_modelsys[i])
                              for i in range(len(fract_modelsys))]
-        factor = [(PLANCK_CONSTANT * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) / (BOLTZMANN_CONSTANT)
+        factor = [(H * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) / (KB)
                   for i in range(len(frequency_wn))]
     else:
-        factor = [(PLANCK_CONSTANT * freq * SPEED_OF_LIGHT * freq_scale_factor) / (BOLTZMANN_CONSTANT)
+        factor = [(H * freq * SPEED_OF_LIGHT * freq_scale_factor) / (KB)
                   for freq in frequency_wn]
     energy = [0.5 * entry * GAS_CONSTANT for entry in factor]
     return sum(energy)
@@ -1939,8 +1942,8 @@ def get_free_space(solv):
     solv_molarity = molarity[nsolv]
     solv_volume = molecular_vol[nsolv]
     if nsolv > 0:
-        v_free = 8 * ((1E27 / (solv_molarity * AVOGADRO_CONSTANT)) ** 0.333333 - solv_volume ** 0.333333) ** 3
-        freespace = v_free * solv_molarity * AVOGADRO_CONSTANT * 1E-24
+        v_free = 8 * ((1E27 / (solv_molarity * AVOGADRO_CONST)) ** 0.333333 - solv_volume ** 0.333333) ** 3
+        freespace = v_free * solv_molarity * AVOGADRO_CONST * 1E-24
     else:
         freespace = 1000.0
     return freespace
@@ -1954,9 +1957,9 @@ def calc_translational_entropy(molecular_mass, conc, temperature, solv):
     Needs the molecular mass. Convert mass in amu to kg; conc in mol/l to number per m^3
     Strans = R(Ln(2pimkT/h^2)^3/2(1/C)) + 1 + 3/2)
     """
-    lmda = ((2.0 * math.pi * molecular_mass * AMU_to_KG * BOLTZMANN_CONSTANT * temperature) ** 0.5) / PLANCK_CONSTANT
+    lmda = ((2.0 * math.pi * molecular_mass * AMU_TO_KG * KB * temperature) ** 0.5) / H
     freespace = get_free_space(solv)
-    ndens = conc * 1000 * AVOGADRO_CONSTANT / (freespace / 1000.0)
+    ndens = conc * 1000 * AVOGADRO_CONST / (freespace / 1000.0)
     entropy = GAS_CONSTANT * (2.5 + math.log(lmda ** 3 / ndens))
     return entropy
 
@@ -2009,10 +2012,10 @@ def calc_rrho_entropy(frequency_wn, temperature, freq_scale_factor, fract_models
     if fract_modelsys is not False:
         freq_scale_factor = [freq_scale_factor[0] * fract_modelsys[i] + freq_scale_factor[1] * (1.0 - fract_modelsys[i])
                              for i in range(len(fract_modelsys))]
-        factor = [(PLANCK_CONSTANT * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) /
-                  (BOLTZMANN_CONSTANT * temperature) for i in range(len(frequency_wn))]
+        factor = [(H * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) /
+                  (KB * temperature) for i in range(len(frequency_wn))]
     else:
-        factor = [(PLANCK_CONSTANT * freq * SPEED_OF_LIGHT * freq_scale_factor) / (BOLTZMANN_CONSTANT * temperature)
+        factor = [(H * freq * SPEED_OF_LIGHT * freq_scale_factor) / (KB * temperature)
                   for freq in frequency_wn]
     entropy = [entry * GAS_CONSTANT / (math.exp(entry) - 1) - GAS_CONSTANT * math.log(1 - math.exp(-entry))
                for entry in factor]
@@ -2027,10 +2030,10 @@ def calc_qRRHO_energy(frequency_wn, temperature, freq_scale_factor):
     vibrational modes described by a rigid-rotor harmonic approximation
     V_RRHO = 1/2(Nhv) + RT(hv/kT)e^(-hv/kT)/(1-e^(-hv/kT))
     """
-    factor = [PLANCK_CONSTANT * freq * SPEED_OF_LIGHT * freq_scale_factor for freq in frequency_wn]
-    energy = [0.5 * AVOGADRO_CONSTANT * entry + GAS_CONSTANT * temperature * entry / BOLTZMANN_CONSTANT
-              / temperature * math.exp(-entry / BOLTZMANN_CONSTANT / temperature) /
-              (1 - math.exp(-entry / BOLTZMANN_CONSTANT / temperature)) for entry in factor]
+    factor = [H * freq * SPEED_OF_LIGHT * freq_scale_factor for freq in frequency_wn]
+    energy = [0.5 * AVOGADRO_CONST * entry + GAS_CONSTANT * temperature * entry / KB
+              / temperature * math.exp(-entry / KB / temperature) /
+              (1 - math.exp(-entry / KB / temperature)) for entry in factor]
     return energy
 
 
@@ -2047,12 +2050,12 @@ def calc_freerot_entropy(frequency_wn, temperature, freq_scale_factor, fract_mod
     if fract_modelsys is not False:
         freq_scale_factor = [freq_scale_factor[0] * fract_modelsys[i] + freq_scale_factor[1] * (1.0 - fract_modelsys[i])
                              for i in range(len(fract_modelsys))]
-        mu = [PLANCK_CONSTANT / (8 * math.pi ** 2 * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) for i in
+        mu = [H / (8 * math.pi ** 2 * frequency_wn[i] * SPEED_OF_LIGHT * freq_scale_factor[i]) for i in
               range(len(frequency_wn))]
     else:
-        mu = [PLANCK_CONSTANT / (8 * math.pi ** 2 * freq * SPEED_OF_LIGHT * freq_scale_factor) for freq in frequency_wn]
+        mu = [H / (8 * math.pi ** 2 * freq * SPEED_OF_LIGHT * freq_scale_factor) for freq in frequency_wn]
     mu_primed = [entry * bav / (entry + bav) for entry in mu]
-    factor = [8 * math.pi ** 3 * entry * BOLTZMANN_CONSTANT * temperature / PLANCK_CONSTANT ** 2 for entry in mu_primed]
+    factor = [8 * math.pi ** 3 * entry * KB * temperature / H ** 2 for entry in mu_primed]
     entropy = [(0.5 + math.log(entry ** 0.5)) * GAS_CONSTANT for entry in factor]
     return entropy
 
@@ -2122,7 +2125,7 @@ def get_selectivity(pattern, files, boltz_facs, boltz_sum, temperature, log, dup
     if ee > 99.99:
         ee = 99.99
     try:
-        dd_free_energy = GAS_CONSTANT / J_TO_AU * temperature * math.log((50 + abs(ee) / 2.0) / (50 - abs(ee) / 2.0)) * KCAL_TO_AU
+        dd_free_energy = GAS_CONSTANT / AU_TO_J * temperature * math.log((50 + abs(ee) / 2.0) / (50 - abs(ee) / 2.0)) * EHPART_TO_KCAL_MOL
     except ZeroDivisionError:
         dd_free_energy = 0.0
     return ee, r, ratio, dd_free_energy, failed, pref
@@ -2156,16 +2159,16 @@ def get_boltz(files, thermo_data, clustering, clusters, temperature, dup_list):
             if hasattr(bbe, "qh_gibbs_free_energy"):
                 if bbe.qh_gibbs_free_energy != None:
                     e_rel[file] = bbe.qh_gibbs_free_energy - e_min
-                    boltz_facs[file] = math.exp(-e_rel[file] * J_TO_AU / GAS_CONSTANT / temperature)
+                    boltz_facs[file] = math.exp(-e_rel[file] * AU_TO_J / GAS_CONSTANT / temperature)
                     if clustering:
                         for n, cluster in enumerate(clusters):
                             for structure in cluster:
                                 if structure == file:
                                     boltz_facs['cluster-' + alphabet[n].upper()] += math.exp(
-                                        -e_rel[file] * J_TO_AU / GAS_CONSTANT / temperature)
+                                        -e_rel[file] * AU_TO_J / GAS_CONSTANT / temperature)
                                     weighted_free_energy['cluster-' + alphabet[n].upper()] += math.exp(
-                                        -e_rel[file] * J_TO_AU / GAS_CONSTANT / temperature) * bbe.qh_gibbs_free_energy
-                    boltz_sum += math.exp(-e_rel[file] * J_TO_AU / GAS_CONSTANT / temperature)
+                                        -e_rel[file] * AU_TO_J / GAS_CONSTANT / temperature) * bbe.qh_gibbs_free_energy
+                    boltz_sum += math.exp(-e_rel[file] * AU_TO_J / GAS_CONSTANT / temperature)
 
     return boltz_facs, weighted_free_energy, boltz_sum
 
@@ -2175,7 +2178,6 @@ def get_boltz(files, thermo_data, clustering, clusters, temperature, dup_list):
 def check_dup(files, thermo_data):
     e_cutoff = 1e-4
     ro_cutoff = 1e-4
-    freq_cutoff = 100
     mae_freq_cutoff = 10
     max_freq_cutoff = 10
     dup_list = []
@@ -2652,7 +2654,7 @@ def main(argv=None):
         log.write("   Concentration = " + str(options.conc) + " mol/L")
     else:
         gas_phase = True
-        options.conc = ATMOS / (GAS_CONSTANT * options.temperature)
+        options.conc = ATM_TO_KPA / (GAS_CONSTANT * options.temperature)
         log.write("   Pressure = 1 atm")
     log.write('\n   All energetic values below shown in Hartree unless otherwise specified.')
     # Initial read of files,
@@ -2850,7 +2852,7 @@ def main(argv=None):
                 fileData = getoutData(file)
                 d3_calc = D3.calcD3(fileData, functional, s6, rs6, s8, bj_a1, bj_a2, damp, abc_term, intermolecular,
                                     pairwise, verbose)
-                d3_energy = (d3_calc.attractive_r6_vdw + d3_calc.attractive_r8_vdw + d3_calc.repulsive_abc) / KCAL_TO_AU
+                d3_energy = (d3_calc.attractive_r6_vdw + d3_calc.attractive_r8_vdw + d3_calc.repulsive_abc) / EHPART_TO_KCAL_MOL
             except:
                 log.write('\n   ! Dispersion Correction Failed')
                 d3_energy = 0.0
@@ -3021,7 +3023,7 @@ def main(argv=None):
                                 mw_solvent = solvents[options.media.lower()][0]
                                 density_solvent = solvents[options.media.lower()][1]
                                 concentration_solvent = (density_solvent * 1000) / mw_solvent
-                                media_correction = -(GAS_CONSTANT / J_TO_AU) * math.log(concentration_solvent)
+                                media_correction = -(GAS_CONSTANT / AU_TO_J) * math.log(concentration_solvent)
                                 if all(getattr(bbe, attrib) for attrib in ["enthalpy", "entropy", "qh_entropy",
                                                                            "gibbs_free_energy", "qh_gibbs_free_energy"]):
                                     if options.QH:
@@ -3139,7 +3141,7 @@ def main(argv=None):
             for i in range(len(interval)):  # Iterate through the temperature range
                 temp = interval[i]
                 if gas_phase:
-                    conc = ATMOS / GAS_CONSTANT / temp
+                    conc = ATM_TO_KPA / GAS_CONSTANT / temp
                 else:
                     conc = options.conc
                 linear_warning = []
@@ -3207,7 +3209,7 @@ def main(argv=None):
                                 mw_solvent = solvents[options.media.lower()][0]
                                 density_solvent = solvents[options.media.lower()][1]
                                 concentration_solvent = (density_solvent * 1000) / mw_solvent
-                                media_correction = -(GAS_CONSTANT / J_TO_AU) * math.log(concentration_solvent)
+                                media_correction = -(GAS_CONSTANT / AU_TO_J) * math.log(concentration_solvent)
                                 if all(getattr(bbe, attrib) for attrib in
                                        ["enthalpy", "entropy", "qh_entropy", "gibbs_free_energy",
                                         "qh_gibbs_free_energy"]):
@@ -3302,10 +3304,10 @@ def main(argv=None):
                                            temp * pes.s_abs[k][l], temp * pes.qs_abs[k][l], pes.g_abs[k][l],
                                            pes.qhg_abs[k][l]]
                             relative = [species[x] - zero_vals[x] for x in range(len(zero_vals))]
-                            e_sum += math.exp(-relative[1] * J_TO_AU / GAS_CONSTANT / temp)
-                            h_sum += math.exp(-relative[3] * J_TO_AU / GAS_CONSTANT / temp)
-                            g_sum += math.exp(-relative[7] * J_TO_AU / GAS_CONSTANT / temp)
-                            qhg_sum += math.exp(-relative[8] * J_TO_AU / GAS_CONSTANT / temp)
+                            e_sum += math.exp(-relative[1] * AU_TO_J / GAS_CONSTANT / temp)
+                            h_sum += math.exp(-relative[3] * AU_TO_J / GAS_CONSTANT / temp)
+                            g_sum += math.exp(-relative[7] * AU_TO_J / GAS_CONSTANT / temp)
+                            qhg_sum += math.exp(-relative[8] * AU_TO_J / GAS_CONSTANT / temp)
                     if options.spc is False:
                         log.write("\n   " + '{:<40}'.format("RXN: " + path + " (" + pes.units + ")  at T: " + str(temp)))
                         if options.QH and options.cosmo_int:
@@ -3359,9 +3361,9 @@ def main(argv=None):
                             species.append(pes.cosmo_qhg_abs[k][l])
                         relative = [species[x] - zero_vals[x] for x in range(len(zero_vals))]
                         if pes.units == 'kJ/mol':
-                            formatted_list = [J_TO_AU / 1000.0 * x for x in relative]
+                            formatted_list = [AU_TO_J / 1000.0 * x for x in relative]
                         else:
-                            formatted_list = [KCAL_TO_AU * x for x in relative]  # Defaults to kcal/mol
+                            formatted_list = [EHPART_TO_KCAL_MOL * x for x in relative]  # Defaults to kcal/mol
                         log.write("\no  ")
                         if options.spc is False:
                             formatted_list = formatted_list[1:]
@@ -3411,10 +3413,10 @@ def main(argv=None):
                                     log.write('{:<39} {:13.2f} {:13.2f} {:10.2f} {:13.2f} {:10.2f} {:10.2f} {:13.2f} '
                                               '{:13.2f}'.format(pes.species[k][l], *formatted_list), thermodata=True)
                         if pes.boltz:
-                            boltz = [math.exp(-relative[1] * J_TO_AU / GAS_CONSTANT / options.temperature) / e_sum,
-                                     math.exp(-relative[3] * J_TO_AU / GAS_CONSTANT / options.temperature) / h_sum,
-                                     math.exp(-relative[6] * J_TO_AU / GAS_CONSTANT / options.temperature) / g_sum,
-                                     math.exp(-relative[7] * J_TO_AU / GAS_CONSTANT / options.temperature) / qhg_sum]
+                            boltz = [math.exp(-relative[1] * AU_TO_J / GAS_CONSTANT / options.temperature) / e_sum,
+                                     math.exp(-relative[3] * AU_TO_J / GAS_CONSTANT / options.temperature) / h_sum,
+                                     math.exp(-relative[6] * AU_TO_J / GAS_CONSTANT / options.temperature) / g_sum,
+                                     math.exp(-relative[7] * AU_TO_J / GAS_CONSTANT / options.temperature) / qhg_sum]
                             selectivity = [boltz[x] * 100.0 for x in range(len(boltz))]
                             log.write("\n  " + '{:<39} {:13.2f}%{:24.2f}%{:35.2f}%{:13.2f}%'.format('', *selectivity))
                             sels.append(selectivity)
@@ -3461,11 +3463,11 @@ def main(argv=None):
                         if options.cosmo:
                             species.append(pes.cosmo_qhg_abs[i][j])
                         relative = [species[x] - zero_vals[x] for x in range(len(zero_vals))]
-                        e_sum += math.exp(-relative[1] * J_TO_AU / GAS_CONSTANT / options.temperature)
-                        h_sum += math.exp(-relative[3] * J_TO_AU / GAS_CONSTANT / options.temperature)
-                        g_sum += math.exp(-relative[7] * J_TO_AU / GAS_CONSTANT / options.temperature)
-                        qhg_sum += math.exp(-relative[8] * J_TO_AU / GAS_CONSTANT / options.temperature)
-                        cosmo_qhg_sum += math.exp(-relative[9] * J_TO_AU / GAS_CONSTANT / options.temperature)
+                        e_sum += math.exp(-relative[1] * AU_TO_J / GAS_CONSTANT / options.temperature)
+                        h_sum += math.exp(-relative[3] * AU_TO_J / GAS_CONSTANT / options.temperature)
+                        g_sum += math.exp(-relative[7] * AU_TO_J / GAS_CONSTANT / options.temperature)
+                        qhg_sum += math.exp(-relative[8] * AU_TO_J / GAS_CONSTANT / options.temperature)
+                        cosmo_qhg_sum += math.exp(-relative[9] * AU_TO_J / GAS_CONSTANT / options.temperature)
 
                 if options.spc is False:
                     log.write("\n   " + '{:<40}'.format("RXN: " + path + " (" + pes.units + ") ", ))
@@ -3518,9 +3520,9 @@ def main(argv=None):
                         species.append(pes.cosmo_qhg_abs[i][j])
                     relative = [species[x] - zero_vals[x] for x in range(len(zero_vals))]
                     if pes.units == 'kJ/mol':
-                        formatted_list = [J_TO_AU / 1000.0 * x for x in relative]
+                        formatted_list = [AU_TO_J / 1000.0 * x for x in relative]
                     else:
-                        formatted_list = [KCAL_TO_AU * x for x in relative]  # Defaults to kcal/mol
+                        formatted_list = [EHPART_TO_KCAL_MOL * x for x in relative]  # Defaults to kcal/mol
                     log.write("\no  ")
                     if options.spc is False:
                         formatted_list = formatted_list[1:]
@@ -3574,10 +3576,10 @@ def main(argv=None):
                                 log.write('{:<39} {:13.2f} {:13.2f} {:10.2f} {:13.2f} {:10.2f} {:10.2f} {:13.2f} '
                                           '{:13.2f}'.format(pes.species[i][j], *formatted_list), thermodata=True)
                     if pes.boltz:
-                        boltz = [math.exp(-relative[1] * J_TO_AU / GAS_CONSTANT / options.temperature) / e_sum,
-                                 math.exp(-relative[3] * J_TO_AU / GAS_CONSTANT / options.temperature) / h_sum,
-                                 math.exp(-relative[6] * J_TO_AU / GAS_CONSTANT / options.temperature) / g_sum,
-                                 math.exp(-relative[7] * J_TO_AU / GAS_CONSTANT / options.temperature) / qhg_sum]
+                        boltz = [math.exp(-relative[1] * AU_TO_J / GAS_CONSTANT / options.temperature) / e_sum,
+                                 math.exp(-relative[3] * AU_TO_J / GAS_CONSTANT / options.temperature) / h_sum,
+                                 math.exp(-relative[6] * AU_TO_J / GAS_CONSTANT / options.temperature) / g_sum,
+                                 math.exp(-relative[7] * AU_TO_J / GAS_CONSTANT / options.temperature) / qhg_sum]
                         selectivity = [boltz[x] * 100.0 for x in range(len(boltz))]
                         log.write("\n  " + '{:<39} {:13.2f}%{:24.2f}%{:35.2f}%{:13.2f}%'.format('', *selectivity))
                         sels.append(selectivity)
