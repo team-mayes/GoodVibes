@@ -4,9 +4,9 @@
 import os
 import pytest
 import math
-from goodvibes import goodvibes_hmayes as GV
+from goodvibes_hmayes import goodvibes_hmayes as GV
 from conftest import datapath
-from goodvibes.media import solvents
+from goodvibes_hmayes.media import solvents
 
 @pytest.mark.parametrize("path, QS, temp, E, ZPE, H, TS, TqhS, G, qhG", [
     # Grimme, 298.15K

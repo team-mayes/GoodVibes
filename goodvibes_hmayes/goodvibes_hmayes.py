@@ -155,7 +155,7 @@ def all_same(items):
     return all(x == items[0] for x in items)
 
 
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
+ALPHABET = 'abcdefghijklmnopqrstuvwxyz'
 
 
 # Enables output to terminal and to text file
@@ -1445,6 +1445,7 @@ def parse_data(file):
                 multiplicity = int(line.strip("=").split()[-1])
 
     # Solvation model and empirical dispersion detection
+    empirical_dispersion = ''
     if 'Gaussian' in version_program.strip():
         for i, line in enumerate(data):
             if '#' in line.strip() and a == 0:
@@ -1489,7 +1490,6 @@ def parse_data(file):
                         sorted(keyword_line[start_scrf:end_scrf].lower().split(','))) + ')'
         if solvation_model != "gas phase":
             solvation_model = [sorted_solvation_model, display_solvation_model]
-        empirical_dispersion = ''
         if keyword_line.strip().find('empiricaldispersion') == -1 and keyword_line.strip().find(
                 'emp=') == -1 and keyword_line.strip().find('emp =') == -1 and keyword_line.strip().find('emp(') == -1:
             empirical_dispersion = "No empirical dispersion detected"
@@ -2269,9 +2269,11 @@ def check_files(log, files, thermo_data, options, STARS, l_o_t, orientation, gri
                 options.conc) != str(1.0):
             log.write("\nx  Caution! Standard concentration is not 1 M for solvent phase (using {} M).".format(options.conc))
     if all_same(solvent_check) == False and "gas phase" in solvent_check:
-        log.write("\nx  Caution! The right standard concentration cannot be determined because the calculations use a combination of gas and solvent phases.")
+        log.write("\nx  Caution! The right standard concentration cannot be determined because the calculations use a "
+                  "combination of gas and solvent phases.")
     if all_same(solvent_check) == False and "gas phase" not in solvent_check:
-        log.write("\nx  Caution! Different solvents used, fix this issue and use option -c 1 for a standard concentration of 1 M.")
+        log.write("\nx  Caution! Different solvents used, fix this issue and use option -c 1 for a standard "
+                  "concentration of 1 M.")
 
     # Check charge and multiplicity
     charge_check = [thermo_data[key].charge for key in thermo_data]
@@ -2340,8 +2342,10 @@ def check_files(log, files, thermo_data, options, STARS, l_o_t, orientation, gri
                                                 linear_mol_wrong.append(linear_fails_list[3][i])
         if len(linear_fails_list[0][i]) == 4:
             if linear_fails_list[0][i] == ['C', 'C', 'H', 'H'] or linear_fails_list[0][i] == ['C', 'H', 'C', 'H'] or \
-                    linear_fails_list[0][i] == ['C', 'H', 'H', 'C'] or linear_fails_list[0][i] == ['H', 'C', 'C', 'H'] or \
-                    linear_fails_list[0][i] == ['H', 'C', 'H', 'C'] or linear_fails_list[0][i] == ['H', 'H', 'C', 'C']:
+                    linear_fails_list[0][i] == ['C', 'H', 'H', 'C'] or \
+                    linear_fails_list[0][i] == ['H', 'C', 'C', 'H'] or \
+                    linear_fails_list[0][i] == ['H', 'C', 'H', 'C'] or \
+                    linear_fails_list[0][i] == ['H', 'H', 'C', 'C']:
                 if len(linear_fails_list[2][i]) == 7:
                     linear_mol_correct.append(linear_fails_list[3][i])
                 else:
@@ -2481,7 +2485,7 @@ def check_files(log, files, thermo_data, options, STARS, l_o_t, orientation, gri
         log.write("\n" + STARS + "\n")
 
 
-def main():
+def main(argv=None):
     files = []
     bbe_vals = []
     clusters = []
@@ -2568,7 +2572,8 @@ def main():
                         help="Turn on the symmetry correction.")
 
     # Parse Arguments
-    (options, args) = parser.parse_known_args()
+    (options, args) = parser.parse_known_args(argv)
+
     # If requested, turn on head-gordon enthalpy correction
     if options.Q: options.QH = True
     if options.QH:
@@ -2600,7 +2605,6 @@ def main():
                 options.boltz = True
                 nclust = -1
     # Get the filenames from the command line prompt
-    args = sys.argv[1:]
     for elem in args:
         if clustering:
             if elem == 'clust:':
@@ -2651,7 +2655,7 @@ def main():
         options.conc = ATMOS / (GAS_CONSTANT * options.temperature)
         log.write("   Pressure = 1 atm")
     log.write('\n   All energetic values below shown in Hartree unless otherwise specified.')
-    # Initial read of files, 
+    # Initial read of files,
     # Grab level of theory, solvation model, check for Normal Termination
     l_o_t, s_m, progress, orientation, grid = [], [], {}, {}, {}
     for file in files:
@@ -2682,7 +2686,7 @@ def main():
     if len(files) == 0:
         sys.exit("\n\nPlease try again with normally terminated output files.\nFor help, use option '-h'\n")
     # Attempt to automatically obtain frequency scale factor,
-    # Application of freq scale factors requires all outputs to be same level of theory 
+    # Application of freq scale factors requires all outputs to be same level of theory
     if options.freq_scale_factor is not False:
         if 'ONIOM' not in l_o_t[0]:
             log.write("\n\n   User-defined vibrational scale factor " + str(options.freq_scale_factor) + " for " +
@@ -2813,7 +2817,7 @@ def main():
     if options.spc:
         log.write("\n   Link job: combining final single point energy with thermal corrections.")
 
-    # Check for special options 
+    # Check for special options
     inverted_freqs, inverted_files = [], []
     if options.ssymm:
         ssymm_option = options.ssymm
@@ -3188,8 +3192,10 @@ def main():
                                                                                                          bbe.cosmo_qhg),
                                                   thermodata=True)
                                     else:
-                                        log.write(' {:24.6f} {:10.6f} {:10.6f} {:13.6f} {:13.6f}'.format(bbe.enthalpy, (
-                                                temp * bbe.entropy), (temp * bbe.qh_entropy), bbe.gibbs_free_energy, bbe.qh_gibbs_free_energy),
+                                        log.write(' {:24.6f} {:10.6f} {:10.6f} {:13.6f} '
+                                                  '{:13.6f}'.format(bbe.enthalpy, (temp * bbe.entropy),
+                                                                    (temp * bbe.qh_entropy), bbe.gibbs_free_energy,
+                                                                    bbe.qh_gibbs_free_energy),
                                                   thermodata=True)
                         else:
                             try:
@@ -3247,7 +3253,8 @@ def main():
     # Tabulate relative values
     if options.pes:
         if options.gconf:
-            log.write('\n   Gconf correction requested to be applied to below relative values using quasi-harmonic Boltzmann factors\n')
+            log.write('\n   Gconf correction requested to be applied to below relative values using quasi-harmonic '
+                      'Boltzmann factors\n')
         for key in thermo_data:
             if not hasattr(thermo_data[key], "qh_gibbs_free_energy"):
                 pes_error = "\nWarning! Could not find thermodynamic data for " + key + "\n"
@@ -3384,22 +3391,25 @@ def main():
                                               '{:13.1f} {:13.1f} {:13.1f}'.format(pes.species[k][l], *formatted_list),
                                               thermodata=True)
                                 if pes.dec == 2:
-                                    log.write('{:<39} {:13.1f} {:13.2f} {:10.2f} {:13.2f} {:13.2f} {:10.2f} {:10.2f} {:13.2f} {:13.2f} {:13.2f}'.format(
+                                    log.write('{:<39} {:13.1f} {:13.2f} {:10.2f} {:13.2f} {:13.2f} {:10.2f} {:10.2f} '
+                                              '{:13.2f} {:13.2f} {:13.2f}'.format(
                                             pes.species[k][l], *formatted_list), thermodata=True)
                             elif options.QH or options.cosmo_int:
                                 if pes.dec == 1:
-                                    log.write('{:<39} {:13.1f} {:13.1f} {:10.1f} {:13.1f} {:13.1f} {:10.1f} {:10.1f} {:13.1f} {:13.1f}'.format(
+                                    log.write('{:<39} {:13.1f} {:13.1f} {:10.1f} {:13.1f} {:13.1f} {:10.1f} {:10.1f} '
+                                              '{:13.1f} {:13.1f}'.format(
                                             pes.species[k][l], *formatted_list), thermodata=True)
                                 if pes.dec == 2:
-                                    log.write('{:<39} {:13.1f} {:13.2f} {:10.2f} {:13.2f} {:13.2f} {:10.2f} {:10.2f} {:13.2f} {:13.2f}'.format(
+                                    log.write('{:<39} {:13.1f} {:13.2f} {:10.2f} {:13.2f} {:13.2f} {:10.2f} {:10.2f} '
+                                              '{:13.2f} {:13.2f}'.format(
                                             pes.species[k][l], *formatted_list), thermodata=True)
                             else:
                                 if pes.dec == 1:
-                                    log.write('{:<39} {:13.1f} {:13.1f} {:10.1f} {:13.1f} {:10.1f} {:10.1f} {:13.1f} {:13.1f}'.format(
-                                            pes.species[k][l], *formatted_list), thermodata=True)
+                                    log.write('{:<39} {:13.1f} {:13.1f} {:10.1f} {:13.1f} {:10.1f} {:10.1f} {:13.1f} '
+                                              '{:13.1f}'.format(pes.species[k][l], *formatted_list), thermodata=True)
                                 if pes.dec == 2:
-                                    log.write('{:<39} {:13.2f} {:13.2f} {:10.2f} {:13.2f} {:10.2f} {:10.2f} {:13.2f} {:13.2f}'.format(
-                                            pes.species[k][l], *formatted_list), thermodata=True)
+                                    log.write('{:<39} {:13.2f} {:13.2f} {:10.2f} {:13.2f} {:10.2f} {:10.2f} {:13.2f} '
+                                              '{:13.2f}'.format(pes.species[k][l], *formatted_list), thermodata=True)
                         if pes.boltz:
                             boltz = [math.exp(-relative[1] * J_TO_AU / GAS_CONSTANT / options.temperature) / e_sum,
                                      math.exp(-relative[3] * J_TO_AU / GAS_CONSTANT / options.temperature) / h_sum,
@@ -3412,11 +3422,11 @@ def main():
                     if pes.boltz == 'ee' and len(sels) == 2:
                         ee = [sels[0][x] - sels[1][x] for x in range(len(sels[0]))]
                         if options.spc is False:
-                            log.write("\n" + stars + "\n   " + '{:<39} {:13.1f}%{:24.1f}%{:35.1f}%{:13.1f}%'.format('ee (%)',
-                                                                                                              *ee))
+                            log.write("\n" + stars + "\n   " +
+                                      '{:<39} {:13.1f}%{:24.1f}%{:35.1f}%{:13.1f}%'.format('ee (%)', *ee))
                         else:
-                            log.write("\n" + stars + "\n   " + '{:<39} {:27.1f} {:24.1f} {:35.1f} {:13.1f} '.format('ee (%)',
-                                                                                                              *ee))
+                            log.write("\n" + stars + "\n   " +
+                                      '{:<39} {:27.1f} {:24.1f} {:35.1f} {:13.1f} '.format('ee (%)', *ee))
                     log.write("\n" + stars + "\n")
                 j += 1
         else:
@@ -3588,7 +3598,9 @@ def main():
         ee, er, ratio, dd_free_energy, failed, preference = get_selectivity(options.ee, files, boltz_facs, boltz_sum,
                                                                             options.temperature, log, dup_list)
         if not failed:
-            log.write("\n   " + '{:<39} {:>13} {:>13} {:>13} {:>13} {:>13}'.format("Selectivity", "Excess (%)", "Ratio (%)", "Ratio", "Major Iso", "ddG"), thermodata=True)
+            log.write("\n   " + '{:<39} {:>13} {:>13} {:>13} {:>13} {:>13}'.format("Selectivity", "Excess (%)",
+                                                                                   "Ratio (%)", "Ratio", "Major Iso",
+                                                                                   "ddG"), thermodata=True)
             log.write("\n" + selec_stars)
             log.write('\no {:<40} {:13.2f} {:>13} {:>13} {:>13} {:13.2f}'.format('', ee, er, ratio, preference,
                                                                                  dd_free_energy), thermodata=True)
@@ -3615,7 +3627,9 @@ def main():
     # Close the log
     log.finalize()
     if options.xyz: xyz.finalize()
+    return 0
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    status = main()
+    sys.exit(status)
