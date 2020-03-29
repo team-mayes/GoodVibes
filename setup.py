@@ -9,7 +9,12 @@ with io.open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
 
 setup(
   name='goodvibes_hmayes',
-  packages=['goodvibes'],
+  packages=['goodvibes_hmayes'],
+  # package_data={'goodvibes_hmayes': ["data/*.dat"]
+  #               },
+  entry_points={'console_scripts': ['goodvibes_hmayes = goodvibes_hmayes.goodvibes_hmayes:main',
+                                    ],
+                },     package_dir={'goodvibes_hmayes': 'goodvibes_hmayes'},
   version='3.0.1.hmayes',
   description='A python program to compute corrections to thermochemical data from frequency calculations',
   long_description=long_description,
